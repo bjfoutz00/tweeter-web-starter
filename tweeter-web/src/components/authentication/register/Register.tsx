@@ -1,13 +1,12 @@
 import "./Register.css";
 import "bootstrap/dist/css/bootstrap.css";
 import { ChangeEvent, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import AuthenticationFormLayout from "../AuthenticationFormLayout";
-import { AuthToken, User } from "tweeter-shared";
-import useToastListener from "../../toaster/ToastListenerHook";
 import { RegisterPresenter, RegisterView } from "../../../presenter/RegisterPresenter";
 import AuthenticationFields from "../AuthenticationFields";
-import useUserInfo from "../../userInfo/UserInfoHook";
+import useAuthenticationListener from "../AuthenticationListenerHook";
+import { AuthenticationView } from "../../../presenter/AuthenticationPresenter";
 
 const Register = () => {
   const [firstName, setFirstName] = useState("");
@@ -20,22 +19,17 @@ const Register = () => {
 
   const rememberMeRef = useRef(rememberMe);
   rememberMeRef.current = rememberMe;
-  
-  const navigate = useNavigate();
-  const { updateUserInfo } = useUserInfo();
-  const { displayErrorMessage } = useToastListener();
-  
+
+  const authenticationView: AuthenticationView = useAuthenticationListener(rememberMeRef)
+
   const listener: RegisterView = {
-    displayErrorMessage: displayErrorMessage,
-    authenticated: (user: User, authToken: AuthToken) =>
-      updateUserInfo(user, user, authToken, rememberMeRef.current),
-    navigateTo: (url: string) => navigate(url),
+    ...authenticationView,
     setImageUrl: setImageUrl,
     setImageBytes: setImageBytes,
   }
 
   const [presenter] = useState(new RegisterPresenter(listener))
-  
+
   const checkSubmitButtonStatus = (): boolean => {
     return !firstName || !lastName || !alias || !password || !imageUrl;
   };
@@ -80,8 +74,8 @@ const Register = () => {
           />
           <label htmlFor="lastNameInput">Last Name</label>
         </div>
-        <AuthenticationFields 
-          isBottomField={false} 
+        <AuthenticationFields
+          isBottomField={false}
           onChangeAlias={(event) => setAlias(event.target.value)}
           onChangePassword={(event) => setPassword(event.target.value)}
         />

@@ -1,23 +1,24 @@
 import { AuthToken, User } from "tweeter-shared";
 import { Buffer } from "buffer";
 import { UserService } from "../model/service/UserService";
+import { AuthenticationPresenter, AuthenticationView } from "./AuthenticationPresenter";
 
 
-export interface RegisterView {
-    displayErrorMessage: (message: string) => void;
-    authenticated: (user: User, authToken: AuthToken) => void;
-    navigateTo: (url: string) => void;
+export interface RegisterView extends AuthenticationView {
     setImageUrl: (url: string) => void;
     setImageBytes: (bytes: Uint8Array) => void;
 }
 
-export class RegisterPresenter {
-    private view: RegisterView;
+export class RegisterPresenter extends AuthenticationPresenter {
     private userService: UserService;
 
     public constructor(view: RegisterView) {
-        this.view = view;
+        super(view);
         this.userService = new UserService();
+    }
+
+    public get view() {
+        return super.view as RegisterView;
     }
 
     public async register(
@@ -27,24 +28,19 @@ export class RegisterPresenter {
         password: string,
         userImageBytes: Uint8Array
     ): Promise<void> {
-        try {
-            let [user, authToken] = await this.userService.register(
+        this.doAuthenticationOperation(
+            () => this.userService.register(
                 firstName,
                 lastName,
                 alias,
                 password,
                 userImageBytes
-            );
-
-            this.view.authenticated(user, authToken);
-            this.view.navigateTo("/");
-        } catch (error) {
-            this.view.displayErrorMessage(
-                `Failed to register user because of exception: ${error}`
-            );
-        }
-    };
-
+            ),
+            () => this.view.navigateTo("/"),
+            "register user"
+        );
+    }
+            
     public handleImageFile(file: File | undefined) {
         if (file) {
             this.view.setImageUrl(URL.createObjectURL(file));

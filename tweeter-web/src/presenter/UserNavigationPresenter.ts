@@ -1,40 +1,44 @@
 import { AuthToken, User } from "tweeter-shared";
 import { UserService } from "../model/service/UserService";
+import { Presenter, View } from "./Presenter";
 
-export interface UserNavigationView {
+export interface UserNavigationView extends View {
     setDisplayedUser: (user: User) => void;
-    displayErrorMessage: (message: string) => void;
 }
 
-export class UserNavigationPresenter {
-    private view: UserNavigationView;
+export class UserNavigationPresenter extends Presenter {
     private userService;
 
     constructor(view: UserNavigationView) {
-        this.view = view;
+        super(view);
         this.userService = new UserService();
     }
-    
+
+    public get view() {
+        return super.view as UserNavigationView;
+    }
+
     public async navigateToUser(
         stringWithUserAlias: string,
         authToken: AuthToken,
         loggedInUser: User
     ): Promise<void> {
-        try {
-            let alias = this.extractAlias(stringWithUserAlias);
-
-            let user = await this.userService.getUser(authToken!, alias);
-
-            if (!!user) {
-                if (loggedInUser!.equals(user)) {
-                    this.view.setDisplayedUser(loggedInUser!);
-                } else {
-                    this.view.setDisplayedUser(user);
+        this.doOperationWithFailReport(
+            async () => {
+                let alias = this.extractAlias(stringWithUserAlias);
+                
+                let user = await this.userService.getUser(authToken!, alias);
+                
+                if (!!user) {
+                    if (loggedInUser!.equals(user)) {
+                        this.view.setDisplayedUser(loggedInUser!);
+                    } else {
+                        this.view.setDisplayedUser(user);
+                    }
                 }
-            }
-        } catch (error) {
-            this.view.displayErrorMessage(`Failed to get user because of exception: ${error}`);
-        }
+            },
+            "get user"
+        );
     };
 
     private extractAlias(value: string): string {

@@ -1,17 +1,11 @@
-import { AuthToken, User } from "tweeter-shared";
 import { UserService } from "../model/service/UserService";
+import { AuthenticationPresenter, AuthenticationView } from "./AuthenticationPresenter";
 
-export interface LoginView {
-    displayErrorMessage: (message: string) => void;
-    authenticated: (user: User, authToken: AuthToken) => void;
-    navigateTo: (url: string) => void;
-}
-export class LoginPresenter {
-    private view: LoginView;
+export class LoginPresenter extends AuthenticationPresenter {
     private userService: UserService;
-    
-    public constructor(view: LoginView) {
-        this.view = view;
+
+    public constructor(view: AuthenticationView) {
+        super(view);
         this.userService = new UserService();
     }
 
@@ -20,20 +14,16 @@ export class LoginPresenter {
         password: string,
         originalUrl: string | undefined
     ): Promise<void> {
-        try {
-            let [user, authToken] = await this.userService.login(alias, password);
-
-            this.view.authenticated(user, authToken);
-
-            if (!!originalUrl) {
-                this.view.navigateTo(originalUrl);
-            } else {
-                this.view.navigateTo("/");
-            }
-        } catch (error) {
-            this.view.displayErrorMessage(
-                `Failed to log user in because of exception: ${error}`
-            );
-        }
+        this.doAuthenticationOperation(
+            () => this.userService.login(alias, password),
+            () => {
+                if (!!originalUrl) {
+                    this.view.navigateTo(originalUrl);
+                } else {
+                    this.view.navigateTo("/");
+                }
+            },
+            "log user in"
+        )
     }
 }

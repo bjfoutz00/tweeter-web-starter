@@ -7,7 +7,9 @@ import AuthenticationFormLayout from "../AuthenticationFormLayout";
 import { AuthToken, User } from "tweeter-shared";
 import useToastListener from "../../toaster/ToastListenerHook";
 import useUserInfo from "../../userInfo/UserInfoHook";
-import { LoginPresenter, LoginView } from "../../../presenter/LoginPresenter";
+import { LoginPresenter } from "../../../presenter/LoginPresenter";
+import { AuthenticationView } from "../../../presenter/AuthenticationPresenter";
+import useAuthenticationListener from "../AuthenticationListenerHook";
 
 interface Props {
   originalUrl?: string;
@@ -18,19 +20,10 @@ const Login = (props: Props) => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
-  const navigate = useNavigate();
-  const { updateUserInfo } = useUserInfo();
-  const { displayErrorMessage } = useToastListener();
-
   const rememberMeRef = useRef(rememberMe);
   rememberMeRef.current = rememberMe;
 
-  const listener: LoginView = {
-    displayErrorMessage: displayErrorMessage,
-    authenticated: (user: User, authToken: AuthToken) =>
-      updateUserInfo(user, user, authToken, rememberMeRef.current),
-    navigateTo: (url: string) => navigate(url),
-  };
+  const listener: AuthenticationView = useAuthenticationListener(rememberMeRef)
 
   const [presenter] = useState(new LoginPresenter(listener));
 
